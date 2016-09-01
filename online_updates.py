@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from util import *
 
 
-def user_update(u, v, bias, profile, i, epochs=150, alpha=0.019, beta=0.02):
+def user_update(u, v, bias, profile, i, epochs=150, alpha=0.023, beta=0.02):
 
     y = np.zeros(epochs)
     profile = np.reshape(profile,(1,len(profile)))
@@ -30,6 +30,7 @@ def user_update(u, v, bias, profile, i, epochs=150, alpha=0.019, beta=0.02):
 
     plt.plot(np.arange(epochs), y)
     plt.show()
+    plt.savefig('data/rmse_online.pdf', bbox_inches='tight')
     plt.savefig('data/rmse_online.png', bbox_inches='tight')
     return u, v
 
@@ -43,7 +44,7 @@ def train_incremental_updates(ratings, updates, n_u, n_v):
     for i in new_users:
 
         if i > len(n_u) - 1:
-            n_u = np.append(n_u, np.random.uniform(-0.05,0.05, (i - (len(n_u) - 1), K)), axis=0)
+            n_u = np.append(n_u, np.random.uniform(-0.1,0.1, (i - (len(n_u) - 1), K)), axis=0)
             new_user = np.zeros((i - (len(ratings) - 1), len(ratings[0])))
             ratings = np.append(ratings, new_user, axis=0)
         profile_u = np.where(updates[i, :] > 0)[0]
