@@ -36,8 +36,13 @@ if __name__ == "__main__":
 
     updated_matrix, u_online, v_online = update(batch_matrix, updates_matrix, train_mask, u_batch, v_batch)
     f = np.dot(u_online, v_online.T)+bias
-    f = np.maximum(np.minimum(f, 5), 1)
+    #f = np.maximum(np.minimum(f, 5), 1)
 
     rmse_train = calc_rmse(updated_matrix, f, train_mask[:len(updated_matrix), :])
-    rmse_test = calc_rmse(updated_matrix, f, test_mask[:len(updated_matrix), :])
+    indexes = np.where(test_mask>0)[0]
+    for i in indexes:
+        err = (f[i,:] - updated_matrix[i, :])*train_mask[i,:]
+        err = err[np.where(err!=0)[0]]**2
+        mean_err = (np.sum(err)/len(err))**(1/2)
+        rmse_test = calc_rmse(updated_matrix[i, :], f[i,:], train_mask[i, :])
     pass

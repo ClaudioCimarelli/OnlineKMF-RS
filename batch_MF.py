@@ -2,12 +2,13 @@ import matplotlib.pyplot as plt
 from util import *
 
 
-def matrix_factorization(r, u, v, epochs=300, alpha=0.023, beta=0.02):
+def matrix_factorization(ratings, u, v, epochs=1000, alpha=0.039, beta=0.0):
     y = np.zeros(epochs)
+    r = ratings[:500,:2000]
     nz_r = non_zero_matrix(r)
     bias = np.sum(r) / np.sum(nz_r)
     for epoch in range(epochs):
-        f = (np.dot(u, v.T) + bias)*nz_r
+        f = (np.dot(u[:len(r),:], v[:len(r[0]),:].T) + bias)*nz_r
         #f = np.maximum((np.minimum(f,5),1))*nz_r
 
         err = r - f
@@ -15,12 +16,12 @@ def matrix_factorization(r, u, v, epochs=300, alpha=0.023, beta=0.02):
         r_m_s_e = calc_rmse(r, f, nz_r)
         y[epoch] = r_m_s_e
 
-        delta__u = np.dot(2 * alpha * err, alpha * v) - alpha * beta * u
-        delta__v = np.dot(2 * alpha * err.T, alpha * u) - alpha * beta * v
+        delta__u = np.dot(2 * alpha * err, alpha * v[:len(r[0]),:]) - alpha * beta * u[:len(r),:]
+        delta__v = np.dot(2 * alpha * err.T, alpha * u[:len(r),:]) - alpha * beta * v[:len(r[0]),:]
 
         #alpha *= 0.99999
-        u += delta__u
-        v += delta__v
+        u[:len(r),:] += delta__u
+        v[:len(r[0]),:] += delta__v
 
     plt.plot(np.arange(epochs), y)
     plt.show()
