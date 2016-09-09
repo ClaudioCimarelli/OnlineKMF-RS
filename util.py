@@ -7,7 +7,8 @@ def non_zero_matrix(r):
     return nz_r
 
 
-def calc_rmse(real_values, prediction, mask):
+def calc_rmse(real_values, prediction):
+    mask = non_zero_matrix(real_values)
     error = (real_values - prediction) * mask
     error **= 2
     RMSE = (np.sum(error) / np.sum(mask)) ** (1 / 2)
@@ -31,3 +32,17 @@ def build_updates_masks(updates, user_num=100):
             test_mask[i, j] = 1
 
     return train_mask, test_mask
+
+
+def build_training_valuation(unknown_users_ratings , m=50):
+    new_users = np.unique(np.nonzero(unknown_users_ratings)[0])
+    t_u = np.zeros_like(unknown_users_ratings)
+    v_u = np.zeros_like(unknown_users_ratings)
+    for i in new_users:
+        items = np.random.permutation(np.nonzero(unknown_users_ratings[i, :])[0])
+        split_index = min(m, len(items)/2)
+        split = np.array_split(items, [int(split_index)])
+        t_u[i, split[0]] = 1
+        v_u[i, split[1]] = 1
+
+    return t_u, v_u

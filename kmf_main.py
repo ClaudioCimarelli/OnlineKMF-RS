@@ -12,59 +12,64 @@ if __name__ == "__main__":
         ratings_dataset = np.loadtxt("ml-1m/ratings.dat", dtype=np.int32, delimiter='::', usecols=(0, 1, 2))
         np.save('data/ratings', ratings_dataset)
 
-    train_index = np.where(ratings_dataset[:, 0] > 5940)[0][0]
-    row = ratings_dataset[:train_index, 0] - 1
-    col = ratings_dataset[:train_index, 1] - 1
-    data = ratings_dataset[:train_index, 2]
+    row = ratings_dataset[:, 0] - 1
+    col = ratings_dataset[:, 1] - 1
+    data = ratings_dataset[:, 2]
     batch_matrix = coo_matrix((data, (row, col))).toarray()
 
     N = len(batch_matrix)
     M = len(batch_matrix[0])
-    K = 40
+    K = 10
+
     try:
         train_mask = np.load('data/train_mask.npy')
         test_mask = np.load('data/test_mask.npy')
 
     except:
-        train_mask, test_mask = build_updates_masks(batch_matrix, user_num=len(batch_matrix))
+        train_mask = np.ones((N, M))
+        test_mask = np.zeros((N,M))
+        users_test = np.random.choice(N, int((N-1)/10), replace=False)
+        test_mask[users_test, :] = 1
+        train_mask -= test_mask
         np.save('data/train_mask', train_mask)
         np.save('data/test_mask', test_mask)
 
-    u_batch, v_batch = train(batch_matrix * train_mask, N, M, K)
+    u_batch, v_batch = train(batch_matrix, train_mask, N, M, K)
 
-    nz_r = non_zero_matrix(batch_matrix * train_mask)
-    bias = np.sum(batch_matrix * train_mask) / np.sum(nz_r)
+    users = np.unique(np.nonzero(train_mask)[0])
+    items = np.unique(np.nonzero(batch_matrix[users, :])[1])
+
+    train_mat = batch_matrix*train_mask
+
+    nz_ratings = non_zero_matrix(train_mat)
+    bias = np.sum(train_mat) / np.sum(nz_ratings)
+
     f = np.dot(u_batch, v_batch.T) + bias
-    rmse_batch_test = calc_rmse(batch_matrix, f, train_mask)
+    rmse_train = calc_rmse(train_mat, f)
 
-    row = ratings_dataset[train_index:, 0] - 1
-    col = ratings_dataset[train_index:, 1] - 1
-    data = ratings_dataset[train_index:, 2]
-    updates_matrix = coo_matrix((data, (row, col))).toarray()
+    updates_matrix = batch_matrix*test_mask
 
     try:
-        train_mask_updates = np.load('data/train_mask_updates.npy')
-        test_mask_updates = np.load('data/test_mask_updates.npy')
-
+        test_u = np.load('data/tu_mask.npy')
+        val_u = np.load('data/vu_mask.npy')
     except:
-        train_mask, test_mask = build_updates_masks(updates_matrix, len(updates_matrix))
-        np.save('data/train_mask_updates', train_mask)
-        np.save('data/test_mask_updates', test_mask)
-
-    updated_matrix, u_online, v_online = update(batch_matrix * train_mask, updates_matrix * train_mask_updates, u_batch,
-                                                v_batch)
+        test_u, val_u = build_training_valuation(updates_matrix)
+        np.save('data/tu_mask', test_u)
+        np.save('data/vu_mask', val_u)
+    u_online, v_online = update(batch_matrix, test_u, u_batch, v_batch, bias)
 
     f = np.dot(u_online, v_online.T) + bias
-    updated_matrix +=  (updates_matrix*test_mask_updates)
-    f = np.maximum(np.minimum(f, 5), 1)
-    rmse_train = calc_rmse(updated_matrix, f, train_mask_updates)
-    rmse_test = calc_rmse(updated_matrix, f, test_mask_updates)
-    indexes = np.nonzero(test_mask_updates)[0]
-    y = np.zeros_like(indexes, dtype=np.float64)
+    # f = np.maximum(np.minimum(f, 5), 1)
+    rmse_train_up = calc_rmse(batch_matrix*test_u, f)
+    rmse_test_up = calc_rmse(batch_matrix*val_u, f)
+    indexes = np.unique(np.nonzero(val_u)[0])
+    y = np.zeros(len(indexes))
     for index, i in enumerate(indexes):
-        rmse_test = calc_rmse(updated_matrix[i, :], f[i, :], test_mask_updates[i, :])
+        rmse_test = calc_rmse(batch_matrix[i, :]*test_u[i, :], f[i, :])
         y[index]  = rmse_test
     plt.plot(indexes, y, 'ro')
-    plt.axis([5940, 6040, 0.10, 1.5])
+    # plt.axis([5940, 6040, 0.10, 5])
     plt.show()
+    plt.savefig('plots/rmse_online_test_scatter.pdf', bbox_inches='tight')
+    plt.savefig('plots/rmse_online_test_scatter.png', bbox_inches='tight')
     pass
