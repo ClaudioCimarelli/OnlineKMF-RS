@@ -56,20 +56,7 @@ if __name__ == "__main__":
         test_u, val_u = build_training_valuation(updates_matrix)
         np.save('data/tu_mask', test_u)
         np.save('data/vu_mask', val_u)
-    u_online, v_online = update(batch_matrix, test_u, u_batch, v_batch, bias)
 
-    f = np.dot(u_online, v_online.T) + bias
-    # f = np.maximum(np.minimum(f, 5), 1)
-    rmse_train_up = calc_rmse(batch_matrix*test_u, f)
-    rmse_test_up = calc_rmse(batch_matrix*val_u, f)
-    indexes = np.unique(np.nonzero(val_u)[0])
-    y = np.zeros(len(indexes))
-    for index, i in enumerate(indexes):
-        rmse_test = calc_rmse(batch_matrix[i, :]*test_u[i, :], f[i, :])
-        y[index]  = rmse_test
-    plt.plot(indexes, y, 'ro')
-    # plt.axis([5940, 6040, 0.10, 5])
-    plt.show()
-    plt.savefig('plots/rmse_online_test_scatter.pdf', bbox_inches='tight')
-    plt.savefig('plots/rmse_online_test_scatter.png', bbox_inches='tight')
+    u_online, v_online = update(batch_matrix * test_u, batch_matrix * val_u, u_batch, v_batch, bias)
+
     pass
