@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from util import *
 
 
-def matrix_factorization(ratings, u, v, epochs= 200, alpha0=0.023, beta=0.001):
+def matrix_factorization(ratings, u, v, epochs= 200, alpha0=0.023, beta=0.03):
     y = np.zeros(epochs)
 
     nz_ratings = non_zero_matrix(ratings)
@@ -11,27 +11,44 @@ def matrix_factorization(ratings, u, v, epochs= 200, alpha0=0.023, beta=0.001):
     vel_u = np.zeros_like(u)
     vel_v = np.zeros_like(v)
 
+    u_prev = np.zeros_like(u)
+    u_prev[...] = u
+    v_prev = np.zeros_like(v)
+    v_prev[...] = v
+
+    f = (np.dot(u, v.T) + bias) * nz_ratings
+    err = ratings - f
+
     for epoch in range(epochs):
 
-        alpha = max(alpha0 / (1 + (epoch / 250)), 0.01)
-        mu = min(0.99, 1.4 / (1 + np.exp(-epoch / 100)))
+        alpha = max(alpha0 / (1 + (epoch / 150)), 0.01)
+        mu = min(0.999, 1.4 / (1 + np.exp(-epoch / 80)))
 
-        f = (np.dot(u, v.T) + bias) * nz_ratings
-        r_m_s_e = calc_rmse(ratings, f)
-        y[epoch] = r_m_s_e
-
-        err = ratings - f
         u_ahead = u + (mu * vel_u)
         v_ahead = v + (mu * vel_v)
 
-        delta__u = np.dot(2 * alpha * err, alpha * v_ahead) - alpha * beta * u_ahead
-        delta__v = np.dot(2 * alpha * err.T, alpha * u_ahead) - alpha * beta * v_ahead
+        delta__u = np.dot(2 * alpha * err, alpha * v_ahead) - (alpha * beta * u_ahead)
+        delta__v = np.dot(2 * alpha * err.T, alpha * u_ahead) - (alpha * beta * v_ahead)
 
         vel_u = (mu * vel_u) + delta__u
         vel_v = (mu * vel_v) + delta__v
 
         u += vel_u
         v += vel_v
+
+        f = (np.dot(u, v.T) + bias) * nz_ratings
+        r_m_s_e = calc_rmse(ratings, f)
+        y[epoch] = r_m_s_e
+        err = ratings - f
+
+        if epoch >0 and (y[epoch]>y[epoch -1]):
+            u[...] = u_prev
+            v[...] = v_prev
+            vel_u[...] = np.zeros_like(u)
+            vel_v[...] = np.zeros_like(v)
+        else:
+            u_prev[...] = u
+            v_prev[...] = v
 
     plt.plot(np.arange(epochs), y)
     plt.show()

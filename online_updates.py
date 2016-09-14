@@ -3,31 +3,41 @@ from util import *
 import random as rnd
 
 
-def user_update(u_i, v, bias, profile, epochs=200, alpha0=0.015, beta=0.001):
+def user_update(u_i, v, bias, profile, epochs=200, alpha0=0.02, beta=0.009):
     profile = np.reshape(profile, (1, len(profile)))
     u_i = np.reshape(u_i, (1, len(u_i)))
     nz_profile = non_zero_matrix(profile)
     vel_u = np.zeros_like(u_i)
-    y = np.zeros(epochs)
+    u_prev = np.zeros_like(u_i)
+    u_prev[...] = u_i
+    rmse_prev = 0
+    f = (np.dot(u_i, v.T) + bias) * nz_profile
+    err = profile - f
     for epoch in range(epochs):
-        f = (np.dot(u_i, v.T) + bias) * nz_profile
-        err = profile - f
 
         alpha = max(alpha0 / (1 + (epoch / 150)), 0.01)
-        mu = min(0.8, 1 / (1 + np.exp(-epoch / 50)))
+        mu = min(0.8, 1.2 / (1 + np.exp(-epoch / 100)))
 
         u_ahead = u_i + (mu * vel_u)
 
-        delta__u = np.dot(2 * alpha * err, alpha * v) - alpha * beta * u_ahead
+        delta__u = np.dot(2 * alpha * err, alpha * v) - (alpha * beta * u_ahead)
 
         vel_u *= mu
         vel_u += delta__u
         u_i += vel_u
 
-    #     rmse_tot = calc_rmse(profile, f)
-    #     y[epoch] = rmse_tot
-    # plt.plot(np.arange(epochs), y)
-    # plt.show()
+        f = (np.dot(u_i, v.T) + bias) * nz_profile
+        err = profile - f
+
+        rmse_tot = np.sum(err**2)/np.sum(nz_profile)
+        if epoch > 0 and (rmse_tot > rmse_prev):
+            u_i[...] = u_prev
+            vel_u[...] = np.zeros_like(u_i)
+        else:
+            u_prev[...] = u_i
+
+        rmse_prev = rmse_tot
+
     return u_i
 
 
@@ -39,30 +49,49 @@ def train_incremental_updates(ratings, test_ratings, n_u, n_v, bias):
     for us in unk_user:
         shuffled_profile = np.random.permutation(np.nonzero(ratings[us, :])[0])
         shuffled_profiles.append(shuffled_profile)
+
+    te = np.zeros(len(unk_user))
+    te_len = np.zeros(len(unk_user))
+
+    te_prev = np.zeros_like(te)
+    te_len_prev = np.zeros_like(te_len)
+
+    se = np.zeros(len(unk_user))
+    se_len = np.zeros(len(unk_user))
+
+    n_u_prev = np.zeros_like(n_u)
     for m in range(50):
-        se = np.zeros(len(unk_user))
-        se_len = np.zeros(len(unk_user))
         for index, i in enumerate(unk_user):
             profile_u = shuffled_profiles[index][:m + 1]#np.nonzero(ratings[i, :])[0][:m + 1]
             err_rij = ratings[i, profile_u[-1]] - (np.dot(n_u[i, :], n_v[profile_u[-1], :].T) + bias)
             prob = np.tanh(err_rij ** 2)
-            if prob > min(0.89,rnd.random()) and len(profile_u) == m + 1:
-                u_i = user_update(n_u[i, :], n_v[profile_u, :], bias, ratings[i, profile_u], epochs=200)
+            if prob > min(0.99,rnd.random()) and len(profile_u) == m + 1:
+                u_i = user_update(n_u[i, :], n_v[profile_u, :], bias, ratings[i, profile_u], epochs=10+(4*m))
                 n_u[i, :] = u_i
-            if 45 <= len(shuffled_profiles[index]) <= 50:
+            if len(profile_u) >= 1:
                 nz_i = non_zero_matrix(test_ratings[i, :])
                 err = (test_ratings[i, :] - ((np.dot(n_u[i, :], n_v.T) + bias) * nz_i)) ** 2
                 se[index] = np.sum(err)
                 se_len[index] = np.sum(nz_i)
+                nz_i = non_zero_matrix(ratings[i, :])
+                err = (ratings[i, :] - ((np.dot(n_u[i, :], n_v.T) + bias) * nz_i)) ** 2
+                te[index] = np.sum(err)
+                te_len[index] = np.sum(nz_i)
+                if m>0 and te[index]/te_len[index] > te_prev[index]/te_len_prev[index]:
+                    n_u[i, :] = n_u_prev[i, :]
+                    te[index] = te_prev[index]
+                    te_len[index] = te_len_prev[index]
 
-        f = (np.dot(n_u[unk_user, :], n_v.T) + bias)
-        rmse_tot = calc_rmse(ratings[unk_user, :], f)
+        te_prev[...] = te
+        te_len_prev[...] = te_len
+        n_u_prev[...] = n_u
+
+        rmse_tot = (np.sum(te) / np.sum(te_len)) ** (1 / 2)
         y[m] = rmse_tot
         rmse_test = (np.sum(se) / np.sum(se_len)) ** (1 / 2)
         y_test[m] = rmse_test
 
     plt.plot(np.arange(50), y_test)
-    plt.show()
     plt.plot(np.arange(50), y)
     plt.show()
     # plt.savefig('plots/rmse_online.png', bbox_inches='tight')
