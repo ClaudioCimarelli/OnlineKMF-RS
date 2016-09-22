@@ -1,21 +1,11 @@
-from scipy.sparse import *
+
 from batch_MF import train
 from online_updates import update
 from util import *
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
-    try:
-        ratings_dataset = np.load('ml-1m/ratings.npy')
-    except:
-        ratings_dataset = np.loadtxt("ml-1m/ratings.dat", dtype=np.int32, delimiter='::', usecols=(0, 1, 2))
-        np.save('data/ratings', ratings_dataset)
-
-    row = ratings_dataset[:, 0] - 1
-    col = ratings_dataset[:, 1] - 1
-    data = ratings_dataset[:, 2]
-    batch_matrix = coo_matrix((data, (row, col))).toarray()
+    batch_matrix = load_data()
 
     N = len(batch_matrix)
     M = len(batch_matrix[0])
