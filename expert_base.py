@@ -26,3 +26,4 @@ if __name__ == "__main__":
         ci_index = np.where(kmeans.labels_ == i)[0]
         clusters_index.append(ci_index)
         clusters.append(private_users_matrix[ci_index, :])
+
