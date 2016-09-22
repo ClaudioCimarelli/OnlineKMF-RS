@@ -3,7 +3,7 @@ from util import *
 import random as rnd
 
 
-def user_update(u_i, v, bias, profile, epochs=200, alpha0=0.02, beta=0.009):
+def user_update(u_i, v, bias, profile, epochs=200, alpha0=0.023, beta=0.07):
     profile = np.reshape(profile, (1, len(profile)))
     u_i = np.reshape(u_i, (1, len(u_i)))
     nz_profile = non_zero_matrix(profile)
@@ -16,7 +16,7 @@ def user_update(u_i, v, bias, profile, epochs=200, alpha0=0.02, beta=0.009):
     for epoch in range(epochs):
 
         alpha = max(alpha0 / (1 + (epoch / 150)), 0.01)
-        mu = min(0.8, 1.2 / (1 + np.exp(-epoch / 100)))
+        mu = min(0.99, 1.2 / (1 + np.exp(-epoch / 80)))
 
         u_ahead = u_i + (mu * vel_u)
 
@@ -65,17 +65,17 @@ def train_incremental_updates(ratings, test_ratings, n_u, n_v, bias):
             profile_u = shuffled_profiles[index][:m + 1]#np.nonzero(ratings[i, :])[0][:m + 1]
             err_rij = ratings[i, profile_u[-1]] - (np.dot(n_u[i, :], n_v[profile_u[-1], :].T) + bias)
             prob = np.tanh(err_rij ** 2)
-            if prob > min(0.99,rnd.random()) and len(profile_u) == m + 1:
-                u_i = user_update(n_u[i, :], n_v[profile_u, :], bias, ratings[i, profile_u], epochs=10+(4*m))
+            if prob > min(0.5,rnd.random()) and len(profile_u) == m + 1:
+                u_i = user_update(n_u[i, :], n_v[profile_u, :], bias, ratings[i, profile_u], epochs=200)
                 n_u[i, :] = u_i
-            if len(profile_u) >= 1:
+            if len(profile_u) == m + 1:
                 nz_i = non_zero_matrix(test_ratings[i, :])
-                err = (test_ratings[i, :] - ((np.dot(n_u[i, :], n_v.T) + bias) * nz_i)) ** 2
-                se[index] = np.sum(err)
+                err = (test_ratings[i, :] - (np.dot(n_u[i, :], n_v.T) + bias)) * nz_i
+                se[index] = np.sum(err**2)
                 se_len[index] = np.sum(nz_i)
                 nz_i = non_zero_matrix(ratings[i, :])
-                err = (ratings[i, :] - ((np.dot(n_u[i, :], n_v.T) + bias) * nz_i)) ** 2
-                te[index] = np.sum(err)
+                err = (ratings[i, :] - (np.dot(n_u[i, :], n_v.T) + bias)) * nz_i
+                te[index] = np.sum(err**2)
                 te_len[index] = np.sum(nz_i)
                 if m>0 and te[index]/te_len[index] > te_prev[index]/te_len_prev[index]:
                     n_u[i, :] = n_u_prev[i, :]
@@ -91,11 +91,12 @@ def train_incremental_updates(ratings, test_ratings, n_u, n_v, bias):
         rmse_test = (np.sum(se) / np.sum(se_len)) ** (1 / 2)
         y_test[m] = rmse_test
 
-    plt.plot(np.arange(50), y_test)
     plt.plot(np.arange(50), y)
+    plt.savefig('plots/rmse_online_v4.png', bbox_inches='tight')
     plt.show()
-    # plt.savefig('plots/rmse_online.png', bbox_inches='tight')
-    # plt.savefig('plots/rmse_online_test.png', bbox_inches='tight')
+    plt.plot(np.arange(50), y_test)
+    plt.savefig('plots/rmse_online_test_v4.png', bbox_inches='tight')
+    plt.show()
     return n_u, n_v
 
 

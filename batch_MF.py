@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from util import *
 
 
-def matrix_factorization(ratings, u, v, epochs= 200, alpha0=0.023, beta=0.03):
+def matrix_factorization(ratings, u, v, epochs= 300, alpha0=0.023, beta=0.07):
     y = np.zeros(epochs)
 
     nz_ratings = non_zero_matrix(ratings)
@@ -51,8 +51,8 @@ def matrix_factorization(ratings, u, v, epochs= 200, alpha0=0.023, beta=0.03):
             v_prev[...] = v
 
     plt.plot(np.arange(epochs), y)
+    plt.savefig('plots/rmse_batch_test_v4.png', bbox_inches='tight')
     plt.show()
-    plt.savefig('plots/rmse_batch_test.png', bbox_inches='tight')
 
     return u, v
 
