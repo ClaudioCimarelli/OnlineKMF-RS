@@ -24,7 +24,7 @@ if __name__ == "__main__":
         np.save('data/train_mask', train_mask)
         np.save('data/test_mask', test_mask)
 
-    u_batch, v_batch = train(batch_matrix, train_mask, N, M, K)
+    u_batch, v_batch = train(batch_matrix * train_mask, N, M, K)
 
     users = np.unique(np.nonzero(train_mask)[0])
     items = np.unique(np.nonzero(batch_matrix[users, :])[1])
