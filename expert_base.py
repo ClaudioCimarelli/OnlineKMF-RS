@@ -1,6 +1,9 @@
 from util import load_data, non_zero_matrix, np
-from sklearn.cluster import KMeans
 from batch_MF import train
+from cluster_build import build_clusters
+from user_based_predictions import user_based_pred
+
+
 
 if __name__ == "__main__":
 
@@ -19,11 +22,7 @@ if __name__ == "__main__":
     K = 40
     u_batch, v_batch = train(experts_matrix, mask, N, M, K, suffix_name='experts')
 
-    kmeans = KMeans(n_clusters=10).fit(non_zero_matrix(private_users_matrix))
-    clusters = []
-    clusters_index = []
-    for i in range(10):
-        ci_index = np.where(kmeans.labels_ == i)[0]
-        clusters_index.append(ci_index)
-        clusters.append(private_users_matrix[ci_index, :])
+    clusters, clusters_index = build_clusters(private_users_matrix)
 
+    for cluster in clusters:
+        pred = user_based_pred(cluster)
