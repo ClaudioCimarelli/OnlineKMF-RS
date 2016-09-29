@@ -34,7 +34,8 @@ if __name__ == "__main__":
         ###train and test set per each cluster
         train_mask, test_mask = build_test_train_masks(cluster)
         ###User based predictions
-        pred = user_based_pred(cluster*train_mask)
+        pred = np.around(user_based_pred(cluster*train_mask))
+        pred = np.maximum(np.minimum(pred, 5), 1)
         rmse_user_based[index] = calc_rmse(cluster * test_mask, pred)
         ###IMF predictions
         users_cluster = private_users_index[clusters_index[index]]

@@ -3,7 +3,7 @@ from util import *
 import random as rnd
 
 
-def user_update(u_i, v, bias, profile, epochs=200, alpha0=0.023, beta=0.035):
+def user_update(u_i, v, bias, profile, epochs=300, alpha0=0.023, beta=0.035):
     profile = np.reshape(profile, (1, len(profile)))
     u_i = np.reshape(u_i, (1, len(u_i)))
     nz_profile = non_zero_matrix(profile)
