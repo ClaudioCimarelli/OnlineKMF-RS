@@ -3,7 +3,7 @@ from util import *
 import random as rnd
 
 
-def user_update(u_i, v, bias, profile, epochs=300, alpha0=0.023, beta=0.035):
+def user_update(u_i, v, bias, profile, epochs=350, alpha0=0.023, beta=0.05):
     profile = np.reshape(profile, (1, len(profile)))
     u_i = np.reshape(u_i, (1, len(u_i)))
     nz_profile = non_zero_matrix(profile)
@@ -16,7 +16,7 @@ def user_update(u_i, v, bias, profile, epochs=300, alpha0=0.023, beta=0.035):
     for epoch in range(epochs):
 
         alpha = max(alpha0 / (1 + (epoch / 150)), 0.01)
-        mu = min(0.99, 1.2 / (1 + np.exp(-epoch / 80)))
+        mu = min(0.89, 1.2 / (1 + np.exp(-epoch / 100)))
 
         u_ahead = u_i + (mu * vel_u)
 
@@ -29,14 +29,14 @@ def user_update(u_i, v, bias, profile, epochs=300, alpha0=0.023, beta=0.035):
         f = (np.dot(u_i, v.T) + bias) * nz_profile
         err = profile - f
 
-        rmse_tot = np.sum(err**2)/np.sum(nz_profile)
-        if epoch > 0 and (rmse_tot > rmse_prev):
-            u_i[...] = u_prev
-            vel_u[...] = np.zeros_like(u_i)
-        else:
-            u_prev[...] = u_i
-
-        rmse_prev = rmse_tot
+        # rmse_tot = np.sum(err**2)/np.sum(nz_profile)
+        # if epoch > 0 and (rmse_tot > rmse_prev):
+        #     u_i[...] = u_prev
+        #     vel_u[...] = np.zeros_like(u_i)
+        # else:
+        #     u_prev[...] = u_i
+        #
+        # rmse_prev = rmse_tot
 
     return u_i
 

@@ -6,7 +6,8 @@ from util import non_zero_matrix, calc_rmse
 def user_based_pred(users_matrix):
     sim = cos_sim(users_matrix)
     nz_us = non_zero_matrix(users_matrix)
-    avg_ratings = (np.sum(users_matrix, axis=1)/ np.sum(nz_us, axis=1)).reshape((-1, 1))
+    with np.errstate(divide='ignore', invalid='ignore'):
+        avg_ratings = np.nan_to_num(np.sum(users_matrix, axis=1)/ np.sum(nz_us, axis=1)).reshape((-1, 1))
     deviations = (users_matrix - avg_ratings)*nz_us
     num = np.dot(sim, deviations)
     den = np.dot(sim, nz_us)

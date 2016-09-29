@@ -29,12 +29,14 @@ if __name__ == "__main__":
 
     rmse_user_based = np.zeros(10)
     rmse_imf = np.zeros(10)
+    len_clusters = np.zeros(10)
+    cluster_dens = np.zeros(10)
 
     for index, cluster in enumerate(clusters):
         ###train and test set per each cluster
         train_mask, test_mask = build_test_train_masks(cluster)
         ###User based predictions
-        pred = np.around(user_based_pred(cluster*train_mask))
+        pred = user_based_pred(cluster*train_mask)
         pred = np.maximum(np.minimum(pred, 5), 1)
         rmse_user_based[index] = calc_rmse(cluster * test_mask, pred)
         ###IMF predictions
@@ -42,8 +44,12 @@ if __name__ == "__main__":
         for user, i in enumerate(users_cluster):
             profile_u = np.nonzero(batch_matrix[i, :] * train_mask[user, :])[0]
             u_batch[i, :] = user_update(u_batch[i, :], v_batch[profile_u, :], bias, batch_matrix[i, profile_u])
-        f = np.dot(u_batch[users_cluster, :], v_batch.T) +bias
+        f = np.dot(u_batch[users_cluster, :], v_batch.T) + bias
+        f = np.maximum(np.minimum(f, 5), 1)
         rmse_imf[index] = calc_rmse(cluster*test_mask, f)
+        len_clusters[index] = len(cluster)
+        cluster_dens[index] = np.sum(non_zero_matrix(cluster))/ len_clusters[index]
+
 
     train_mask, test_mask = build_test_train_masks(batch_matrix)
     pred = user_based_pred(batch_matrix * train_mask)
