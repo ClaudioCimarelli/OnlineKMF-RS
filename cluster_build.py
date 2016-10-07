@@ -17,7 +17,7 @@ def build_clusters(users_matrix, n_cluster=10):
 
 def cluster_from(users_matrix, n_cluster=10):
 
-    k_means = KMeans(n_clusters=n_cluster, n_init=10, max_iter=350).fit((users_matrix))
+    k_means = KMeans(n_clusters=n_cluster, n_init=10, max_iter=350).fit(non_zero_matrix(users_matrix))
     clusters = []
     clusters_index = []
 

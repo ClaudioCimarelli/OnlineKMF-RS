@@ -4,8 +4,8 @@ import random as rnd
 
 
 def user_update(u_i, v, bias, profile, epochs=350, alpha0=0.023, beta=0.05):
-    profile = np.reshape(profile, (1, len(profile)))
-    u_i = np.reshape(u_i, (1, len(u_i)))
+    profile = np.reshape(profile, (1, -1))
+    u_i = np.reshape(u_i, (1, -1))
     nz_profile = non_zero_matrix(profile)
     vel_u = np.zeros_like(u_i)
     u_prev = np.zeros_like(u_i)
@@ -40,8 +40,12 @@ def user_update(u_i, v, bias, profile, epochs=350, alpha0=0.023, beta=0.05):
 
     return u_i
 
+def new_user_update(v, bias, profile):
+    u_b = np.random.uniform(-0.05, 0.05, len(v[0]))
+    return user_update(u_b, v, bias, profile)
 
-def train_incremental_updates(ratings, test_ratings, n_u, n_v, bias):
+
+def evaluate_incremental_updates(ratings, test_ratings, n_u, n_v, bias):
     unk_user = np.unique(np.nonzero(ratings)[0])
     y = np.zeros(50)
     y_test = np.zeros(50)
@@ -105,7 +109,7 @@ def update(updates_matrix, valuation_matrix, u_batch, v_batch, bias):
         u_online = np.load('data/u_online.npy')
         v_online = np.load('data/v_online.npy')
     except:
-        u_online, v_online = train_incremental_updates(updates_matrix, valuation_matrix, u_batch, v_batch, bias)
+        u_online, v_online = evaluate_incremental_updates(updates_matrix, valuation_matrix, u_batch, v_batch, bias)
         np.save('data/u_online', u_online)
         np.save('data/v_online', v_online)
     return u_online, v_online

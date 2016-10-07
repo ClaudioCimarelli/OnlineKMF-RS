@@ -15,7 +15,7 @@ def user_based_pred(users_matrix):
         base_pred = np.nan_to_num(np.divide(num, den))
     pred = avg_ratings + base_pred
     rmse = calc_rmse(users_matrix, pred)
-    return pred
+    return np.maximum(np.minimum(pred, 5), 1)
 
 
 
