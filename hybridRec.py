@@ -17,7 +17,7 @@ def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
     N = len(batch_matrix)
     M = len(batch_matrix[0])
     K = 40
-    u_batch, v_batch = train(batch_matrix * mask, N, M, K, suffix_name='experts4000')
+    u_batch, v_batch = train(batch_matrix * mask, N, M, K, suffix_name='experts_max_dens4000')
     nz_ratings = non_zero_matrix(batch_matrix * mask)
     bias = np.sum(batch_matrix * mask) / np.sum(nz_ratings)
     rmse_user_based = np.zeros((10, 1))
@@ -32,10 +32,9 @@ def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
         train_mask, test_mask = build_test_train_masks(cluster)
 
         ###User based predictions
-        user_based_pool = np.append(batch_matrix[experts_index, :], cluster * train_mask, axis=0)
-        ub_pred = user_based_pred(user_based_pool)[len(experts_index):]
-        # ub_pred = user_based_pred(cluster * train_mask)
-        # ub_pred = np.maximum(np.minimum(ub_pred, 5), 1)
+        # user_based_pool = np.append(batch_matrix[experts_index, :], cluster * train_mask, axis=0)
+        # ub_pred = user_based_pred(user_based_pool)[len(experts_index):]
+        ub_pred = user_based_pred(cluster * train_mask)
         # rmse_user_based[index] = calc_rmse(cluster * test_mask, ub_pred)
 
         ###IMF predictions
@@ -45,7 +44,7 @@ def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
             u_batch[i, :] = user_update(u_batch[i, :], v_batch[profile_u, :], bias, batch_matrix[i, profile_u])
         imf_pred = np.dot(u_batch[users_cluster, :], v_batch.T) + bias
         imf_pred = np.maximum(np.minimum(imf_pred, 5), 1)
-        rmse_imf[index] = calc_rmse(cluster * test_mask, imf_pred)
+        # rmse_imf[index] = calc_rmse(cluster * test_mask, imf_pred)
 
         ### Combined predictions
         rmse_comb_alpha = np.zeros(31)

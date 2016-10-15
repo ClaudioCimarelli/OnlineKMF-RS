@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from util import *
 
 
-def matrix_factorization(ratings, u, v, epochs=350, alpha0=0.023, beta=0.045, suffix_name='batch'):
+def matrix_factorization(ratings, u, v, epochs=200, alpha0=0.023, beta=0.045, suffix_name='batch'):
     y = np.zeros(epochs)
 
     nz_ratings = non_zero_matrix(ratings)

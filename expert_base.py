@@ -1,21 +1,9 @@
 from util import *
 import matplotlib.pyplot as plt
-from cycler import cycler
 from batch_MF import train
-from online_updates import user_update
 from cluster_build import build_clusters
 from user_based_predictions import user_based_pred
 from hybridRec import hybrid_rec, imf_pred_cluster, hybrid_rec_test
-
-
-def expert_base(batch_matrix, max_users=4000):
-    nz_batch = non_zero_matrix(batch_matrix)
-    ratings_count = np.sum(nz_batch, axis=1)
-    sort_by_ratings_index = np.argsort(ratings_count, kind='mergesort')
-    experts_index = np.sort(sort_by_ratings_index[-max_users:])
-    private_users_index = np.sort(sort_by_ratings_index[:-max_users])
-    return experts_index, private_users_index
-
 
 
 if __name__ == "__main__":
@@ -28,16 +16,15 @@ if __name__ == "__main__":
     train_mask, test_mask = build_test_train_masks(clusters[0])
     random_expert = np.random.permutation(experts_index)
 
-
-
     rmse_comb = np.zeros((3,8))
+    dens = np.zeros(8)
 
     for i, usr_num in enumerate(np.linspace(500, 4000, 8)):
-        experts_subset_index = random_expert[:int(usr_num)]
+        experts_subset_index = np.sort(experts_index[-int(usr_num):])
 
         ###User based predictions
-        user_based_pool = np.append(batch_matrix[experts_subset_index, :],clusters[0] * train_mask, axis=0)
-        ub_pred = user_based_pred(user_based_pool)[int(usr_num):]
+        user_based_pool = np.append(batch_matrix[experts_subset_index, :], clusters[0] * train_mask, axis=0)
+        ub_pred = user_based_pred(clusters[0] * train_mask)
 
         mask = np.zeros_like(batch_matrix)
         mask[experts_subset_index, :] = 1
@@ -45,21 +32,23 @@ if __name__ == "__main__":
         N = len(batch_matrix)
         M = len(batch_matrix[0])
         K = 40
-        u_batch, v_batch = train(batch_matrix * mask, N, M, K, suffix_name='experts'+ str(int(usr_num)))
+        u_batch, v_batch = train(batch_matrix * mask, N, M, K, suffix_name='experts_max_dens'+ str(int(usr_num)))
         nz_ratings = non_zero_matrix(batch_matrix * mask)
         bias = np.sum(batch_matrix * mask) / np.sum(nz_ratings)
         u_cluster, imf_pred = imf_pred_cluster(clusters[0]*train_mask, v_batch, bias)
 
-        result = hybrid_rec(imf_pred, ub_pred)
+        result = hybrid_rec(imf_pred, ub_pred, alpha=0.8)
 
-        rmse_comb[0,i] =  calc_rmse(clusters[0] * test_mask, result)
+        dens[i] = 100 * (np.sum(non_zero_matrix(batch_matrix[experts_subset_index, :])) / batch_matrix[experts_subset_index, :].size)
+
+        rmse_comb[0,i] = calc_rmse(clusters[0] * test_mask, result)
         rmse_comb[1, i] = calc_rmse(clusters[0] * test_mask, imf_pred)
         rmse_comb[2, i] = calc_rmse(clusters[0] * test_mask, ub_pred)
 
     plt.plot(np.linspace(500, 4000, 8), rmse_comb[0], label='hybrid')
     plt.plot(np.linspace(500, 4000, 8), rmse_comb[1], label='imf')
     plt.plot(np.linspace(500, 4000, 8), rmse_comb[2], label='user based')
-    plt.xlabel('expert group size')
+    plt.xlabel('expert group density')
     plt.ylabel('RMSE')
     plt.grid(True)
     plt.legend(ncol=3)
