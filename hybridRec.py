@@ -16,10 +16,14 @@ def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
 
     N = len(batch_matrix)
     M = len(batch_matrix[0])
-    K = 40
-    u_batch, v_batch = train(batch_matrix * mask, N, M, K, suffix_name='experts_max_dens4000')
-    nz_ratings = non_zero_matrix(batch_matrix * mask)
+    K = 20
+    u_batch, v_batch = train(batch_matrix * mask, N, M, K, suffix_name='experts')
+    nz_ratings = non_zero_matrix(batch_matrix * mask).astype('float32')
     bias = np.sum(batch_matrix * mask) / np.sum(nz_ratings)
+
+    #
+    #Plotting data arrays
+    #
     rmse_user_based = np.zeros((10, 1))
     rmse_imf = np.zeros((10, 1))
     clust_len = np.zeros((10, 1))
@@ -31,7 +35,7 @@ def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
         ###train and test set per each cluster
         train_mask, test_mask = build_test_train_masks(cluster)
 
-        ###User based predictions
+        # ###User based predictions
         # user_based_pool = np.append(batch_matrix[experts_index, :], cluster * train_mask, axis=0)
         # ub_pred = user_based_pred(user_based_pool)[len(experts_index):]
         ub_pred = user_based_pred(cluster * train_mask)
@@ -80,10 +84,6 @@ def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
     np.savetxt('data/rmse_imf', rmse_imf.T, '%.4f', delimiter=' &', newline='\\\\ \hline \n')
     np.savetxt('data/clus_len', clust_len.T, '%.d', delimiter=' &', newline='\\\\ \hline \n')
     np.savetxt('data/clus_dens', clust_dens.T, '%.4f', delimiter=' &', newline='\\\\ \hline \n')
-
-    train_mask, test_mask = build_test_train_masks(batch_matrix)
-    ub_pred = user_based_pred(batch_matrix * train_mask)
-    rmse_usbas_tot = calc_rmse(batch_matrix * test_mask, ub_pred)
     pass
 
 

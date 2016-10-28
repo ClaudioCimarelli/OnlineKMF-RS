@@ -3,20 +3,19 @@ from util import *
 import random as rnd
 
 
-def user_update(u_i, v, bias, profile, epochs=150, alpha0=0.023, beta=0.05):
+def user_update(u_i, v, bias, profile, epochs=30, alpha0=0.023, beta=0.05):
     profile = np.reshape(profile, (1, -1))
     u_i = np.reshape(u_i, (1, -1))
-    nz_profile = non_zero_matrix(profile)
     vel_u = np.zeros_like(u_i)
-    u_prev = np.zeros_like(u_i)
-    u_prev[...] = u_i
-    rmse_prev = 0
-    f = (np.dot(u_i, v.T) + bias) * nz_profile
+    # u_prev = np.zeros_like(u_i)
+    # u_prev[...] = u_i
+    # rmse_prev = 0
+    f = (np.dot(u_i, v.T) + bias)
     err = profile - f
     for epoch in range(epochs):
 
         alpha = max(alpha0 / (1 + (epoch / 150)), 0.01)
-        mu = min(0.89, 1.2 / (1 + np.exp(-epoch / 100)))
+        mu = min(0.99, 1.2 / (1 + np.exp(-epoch / 60)))
 
         u_ahead = u_i + (mu * vel_u)
 
@@ -26,7 +25,7 @@ def user_update(u_i, v, bias, profile, epochs=150, alpha0=0.023, beta=0.05):
         vel_u += delta__u
         u_i += vel_u
 
-        f = (np.dot(u_i, v.T) + bias) * nz_profile
+        f = (np.dot(u_i, v.T) + bias)
         err = profile - f
 
         # rmse_tot = np.sum(err**2)/np.sum(nz_profile)
@@ -40,8 +39,10 @@ def user_update(u_i, v, bias, profile, epochs=150, alpha0=0.023, beta=0.05):
 
     return u_i
 
+
 def new_user_update(v, bias, profile):
     u_b = np.random.uniform(-0.05, 0.05, len(v[0]))
+    u_b = u_b.astype('float16')
     return user_update(u_b, v, bias, profile)
 
 

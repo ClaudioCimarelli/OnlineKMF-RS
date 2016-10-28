@@ -22,10 +22,10 @@ def cluster_from(users_matrix, n_cluster=10):
     clusters_index = []
 
     for i in range(n_cluster):
-        ci_index = np.where(k_means.labels_ == i)[0]
+        ci_index = (np.where(k_means.labels_ == i)[0]).astype('int16')
         clusters_index.append(ci_index)
 
-    random_pick = np.empty([1, 0], dtype='int64')
+    random_pick = np.empty([1, 0], dtype='int16')
     for index, cluster_index in enumerate(clusters_index):
         random_rows = np.sort(np.random.choice(len(cluster_index), int(len(cluster_index) * 40 / 100), replace=False))
         random_pick = np.append(random_pick, cluster_index[random_rows])
