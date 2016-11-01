@@ -6,7 +6,7 @@ def load_data():
     try:
         ratings_dataset = np.load('ml-1m/ratings.npy')
     except:
-        ratings_dataset = np.loadtxt("ml-1m/ratings.dat", dtype=np.int16, delimiter='::', usecols=(0, 1, 2))
+        ratings_dataset = np.loadtxt("ml-1m/ratings.dat", dtype=np.int32, delimiter='::', usecols=(0, 1, 2))
         np.save('ml-1m/ratings', ratings_dataset)
 
     row = ratings_dataset[:, 0] - 1
@@ -24,15 +24,15 @@ def expert_base(batch_matrix, max_users=4000):
         nz_batch = non_zero_matrix(batch_matrix)
         ratings_count = np.sum(nz_batch, axis=1)
         sort_by_ratings_index = np.argsort(ratings_count, kind='mergesort')
-        experts_index = np.sort(sort_by_ratings_index[-max_users:]).astype('int16')
-        private_users_index = np.sort(sort_by_ratings_index[:-max_users]).astype('int16')
+        experts_index = np.sort(sort_by_ratings_index[-max_users:]).astype('int32')
+        private_users_index = np.sort(sort_by_ratings_index[:-max_users]).astype('int32')
         np.save('data/experts_index', experts_index)
         np.save('data/private_users_index', private_users_index)
     return experts_index, private_users_index
 
 
 def non_zero_matrix(r):
-    nz_r = np.zeros_like(r, dtype='float16')
+    nz_r = np.zeros_like(r, dtype='float32')
     with np.errstate(divide='ignore', invalid='ignore'):
         np.divide(r, r, out=nz_r)
         nz_r[...] = np.nan_to_num(nz_r)
@@ -40,7 +40,7 @@ def non_zero_matrix(r):
 
 
 def calc_rmse(real_values, prediction):
-    mask = non_zero_matrix(real_values).astype('float32')
+    mask = non_zero_matrix(real_values)
     error = (real_values - prediction) * mask
     error **= 2
     RMSE = (np.sum(error) / np.sum(mask)) ** (1 / 2)

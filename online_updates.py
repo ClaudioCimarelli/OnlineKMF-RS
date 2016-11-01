@@ -3,7 +3,7 @@ from util import *
 import random as rnd
 
 
-def user_update(u_i, v, bias, profile, epochs=30, alpha0=0.023, beta=0.05):
+def user_update(u_i, v, bias, profile, epochs=100, alpha0=0.023, beta=0.05):
     profile = np.reshape(profile, (1, -1))
     u_i = np.reshape(u_i, (1, -1))
     vel_u = np.zeros_like(u_i)
@@ -15,7 +15,7 @@ def user_update(u_i, v, bias, profile, epochs=30, alpha0=0.023, beta=0.05):
     for epoch in range(epochs):
 
         alpha = max(alpha0 / (1 + (epoch / 150)), 0.01)
-        mu = min(0.99, 1.2 / (1 + np.exp(-epoch / 60)))
+        mu = min(0.89, 1.2 / (1 + np.exp(-epoch / 100)))
 
         u_ahead = u_i + (mu * vel_u)
 
@@ -42,7 +42,7 @@ def user_update(u_i, v, bias, profile, epochs=30, alpha0=0.023, beta=0.05):
 
 def new_user_update(v, bias, profile):
     u_b = np.random.uniform(-0.05, 0.05, len(v[0]))
-    u_b = u_b.astype('float16')
+    u_b = u_b
     return user_update(u_b, v, bias, profile)
 
 
