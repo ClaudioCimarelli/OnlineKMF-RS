@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
 from util import *
-import random as rnd
 
 
 def user_update(u_i, v, bias, profile, epochs=30, learn_rate=0.0015, reg_fact=0.06):
