@@ -1,15 +1,12 @@
 from util import *
 import matplotlib.pyplot as plt
 from user_based_predictions import user_based_pred
-from online_updates import user_update, new_user_update
+from online_updates_v2 import new_user_update
 from batch_MF import train
-from cluster_build import build_clusters
 
 
-def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
+def hyb_rec_valuation_plot(batch_matrix, experts_index, clusters):
 
-    private_users_matrix = batch_matrix[private_users_index, :]
-    clusters, clusters_index = build_clusters(private_users_matrix)
 
     mask = np.zeros_like(batch_matrix)
     mask[experts_index, :] = 1
@@ -40,12 +37,6 @@ def hybrid_rec_test(batch_matrix,experts_index, private_users_index):
         rmse_user_based[index] = calc_rmse(cluster * test_mask, ub_pred)
 
         ###IMF predictions
-        # users_cluster = private_users_index[clusters_index[index]]
-        # for user, i in enumerate(users_cluster):
-        #     profile_u = np.nonzero(batch_matrix[i, :] * train_mask[user, :])[0]
-        #     u_batch[i, :] = user_update(u_batch[i, :], v_batch[profile_u, :], bias, batch_matrix[i, profile_u])
-        # imf_pred = np.dot(u_batch[users_cluster, :], v_batch.T) + bias
-        # imf_pred = np.maximum(np.minimum(imf_pred, 5), 1)
         imf_pred = imf_pred_cluster(cluster*train_mask, v_batch, bias)
 
         rmse_imf[index] = calc_rmse(cluster * test_mask, imf_pred)

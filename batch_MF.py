@@ -5,11 +5,10 @@ from util import *
 def matrix_factorization(ratings, u, v, epochs=150, alpha0=0.023, beta=0.045):
     nz_ratings = non_zero_matrix(ratings)
     bias = np.divide(np.sum(ratings), np.sum(nz_ratings))
+    ratings -= bias
 
     vel_u = np.zeros_like(u)
     vel_v = np.zeros_like(v)
-    f = (np.dot(u, v.T) + bias) * nz_ratings
-    err = ratings - f
 
     for epoch in range(epochs):
 
@@ -19,6 +18,9 @@ def matrix_factorization(ratings, u, v, epochs=150, alpha0=0.023, beta=0.045):
         u_ahead = u + (mu * vel_u)
         v_ahead = v + (mu * vel_v)
 
+        f = np.dot(u_ahead, v_ahead.T)* nz_ratings
+        err = ratings - f
+
         delta__u = np.dot(2 * alpha * err, alpha * v_ahead) - (2 * alpha * beta * u_ahead)
         delta__v = np.dot(2 * alpha * err.T, alpha * u_ahead) - (2 * alpha * beta * v_ahead)
 
@@ -27,9 +29,6 @@ def matrix_factorization(ratings, u, v, epochs=150, alpha0=0.023, beta=0.045):
 
         u[...] += vel_u
         v[...] += vel_v
-
-        f = (np.dot(u, v.T) + bias) * nz_ratings
-        err = ratings - f
 
     return u, v
 

@@ -4,14 +4,10 @@ import random as rnd
 
 
 def user_update(u_i, v, bias, profile, epochs=100, alpha0=0.023, beta=0.05):
-    profile = np.reshape(profile, (1, -1))
+    profile = np.reshape(profile, (1, -1)) - bias
     u_i = np.reshape(u_i, (1, -1))
     vel_u = np.zeros_like(u_i)
-    # u_prev = np.zeros_like(u_i)
-    # u_prev[...] = u_i
-    # rmse_prev = 0
-    f = (np.dot(u_i, v.T) + bias)
-    err = profile - f
+
     for epoch in range(epochs):
 
         alpha = max(alpha0 / (1 + (epoch / 150)), 0.01)
@@ -19,30 +15,21 @@ def user_update(u_i, v, bias, profile, epochs=100, alpha0=0.023, beta=0.05):
 
         u_ahead = u_i + (mu * vel_u)
 
+        f = np.dot(u_ahead, v.T)
+        err = profile - f
+
         delta__u = np.dot(2 * alpha * err, alpha * v) - (2 * alpha * beta * u_ahead)
 
         vel_u *= mu
         vel_u += delta__u
         u_i += vel_u
 
-        f = (np.dot(u_i, v.T) + bias)
-        err = profile - f
-
-        # rmse_tot = np.sum(err**2)/np.sum(nz_profile)
-        # if epoch > 0 and (rmse_tot > rmse_prev):
-        #     u_i[...] = u_prev
-        #     vel_u[...] = np.zeros_like(u_i)
-        # else:
-        #     u_prev[...] = u_i
-        #
-        # rmse_prev = rmse_tot
 
     return u_i
 
 
 def new_user_update(v, bias, profile):
     u_b = np.random.uniform(-0.05, 0.05, len(v[0]))
-    u_b = u_b
     return user_update(u_b, v, bias, profile)
 
 
